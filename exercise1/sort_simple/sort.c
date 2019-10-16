@@ -11,8 +11,9 @@ int main(int argc, char ** argv) {
 	for(i=0; i<(sizeof(strList[0])/sizeof(char)); i++){
 		if(fgets(strList[i], sizeof(strList[i]), stdin)){
 			count++;
+		} else{
+			break;
 		}
-
 	}
 
 	for(j=0; j<count-1; j++){
@@ -26,7 +27,7 @@ int main(int argc, char ** argv) {
 	}
 
 	for(i=0; i<(sizeof(strList[0])/sizeof(char)); i++){
-		printf("%s \n", strList[i]);
+		printf("%s", strList[i]);
 	}
 
 	return 0;
