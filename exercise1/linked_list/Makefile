@@ -2,7 +2,7 @@
 
 #compiler c
 CC = gcc
-CFLAGS = -D_POSIX_SOURCE -Wall -Werror -pedantic -std=c99
+CFLAGS = -D_POSIX_SOURCE -Wall -pedantic -std=c99 -g
 
 ###################################
 
@@ -10,17 +10,17 @@ CFLAGS = -D_POSIX_SOURCE -Wall -Werror -pedantic -std=c99
 SOURCE = $(wildcard *.c) #all .c files
 HEADER = $(SOURCE:.c=.h)
 OBJS = $(SOURCE:.c=.o)
-TARGET = test_list
+TARGET = test_list1 test_list2 test_list3 test_list4
 
 
 
 ###################################
 
 #standard rules
-all: test_list
+all: $(TARGET)
 
-test_list: test_list.o linkedlist.o
-	$(CC) -o $@ $(OBJS)
+%: %.o linkedlist.o
+	$(CC) -o $@ $< linkedlist.o
 
 clean:
 	rm -f $(OBJS) $(TARGET)
@@ -34,4 +34,3 @@ clean:
 	$(CC) -c $(CFLAGS) $<
 
 #EOF
-

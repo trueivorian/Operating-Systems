@@ -11,10 +11,15 @@
 
 // --- Data structures ---
 
-// TODO: Define additional data structures here when you need them.
+typedef struct node{
+  //list stores integers
+  int data;
+  //next pointer to next element
+  struct node* next;
+} node;
 
 typedef struct list{
-  // TODO: define your list structure here!
+  node * head;
 } list;
 
 // --- Functions ---
