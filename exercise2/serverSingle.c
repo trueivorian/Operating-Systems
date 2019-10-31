@@ -19,6 +19,19 @@ void error(char *msg)
     exit(1);
 }
 
+/* Adds two strings dynamically */
+char *str_add(char *str1, char *str2)
+{
+        int length;
+        char *str;
+        if (str1 != NULL)
+                length = strlen(str1);
+        length += strlen(str2) + 1 * sizeof(*str2);
+        str = realloc(str1, length);
+        strcat(str, str2);
+        return str;
+}
+
 int main(int argc, char *argv[])
 {
     socklen_t clilen;
@@ -74,16 +87,16 @@ int main(int argc, char *argv[])
 
         bzero(buffer, BUFFERLENGTH);
 
-        char* msg = NULL;
+        char msg[1024];
+	
+	msg[0] = '\0';
 
-        int n;
+	int n;
 
         // Receive the client message
         while ((n = read(newsockfd, buffer, BUFFERLENGTH - 1)))
         {
-            msg = realloc(msg, strlen(msg) + strlen(buffer) + sizeof(char));
-
-            strcat(msg, buffer);
+	    strcat(msg, buffer);
 
             bzero(buffer, BUFFERLENGTH);
         }
@@ -92,8 +105,6 @@ int main(int argc, char *argv[])
         {
             /* close the connection */
             close(newsockfd);
-
-            free(msg);
 
             error("ERROR reading from socket");
         }
@@ -131,8 +142,6 @@ int main(int argc, char *argv[])
 
         /* close the connection */
         close(newsockfd);
-
-        free(msg);
     }
 
     return 0;
