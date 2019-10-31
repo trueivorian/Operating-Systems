@@ -74,14 +74,14 @@ int main(int argc, char *argv[])
 
         bzero(buffer, BUFFERLENGTH);
 
-        char* msg;
+        char* msg = NULL;
 
         int n;
 
         // Receive the client message
         while ((n = read(newsockfd, buffer, BUFFERLENGTH - 1)))
         {
-            msg = (char*)calloc(strlen(msg) + strlen(buffer), sizeof(char));
+            msg = realloc(msg, strlen(msg) + strlen(buffer) + sizeof(char));
 
             strcat(msg, buffer);
 
