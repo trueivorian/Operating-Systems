@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     if (s != 0)
     {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
-        exit(EXIT_FAILURE);
+        exit(1);
     }
     /* getaddrinfo() returns a list of address structures.
        Try each address until we successfully connect(2).
@@ -58,7 +58,8 @@ int main(int argc, char *argv[])
     if (rp == NULL)
     { /* No address succeeded */
         fprintf(stderr, "Could not connect\n");
-        exit(EXIT_FAILURE);
+        close(sockfd);
+        exit(1);
     }
     freeaddrinfo(result); /* No longer needed */
     bzero(b, BUFFERLENGTH);
@@ -69,10 +70,10 @@ int main(int argc, char *argv[])
         /* send message */
         n = write(sockfd, b, strlen(b));
 
-        //printf("(client) %i %s", loopCount++, b);
-
-        if (n < 0)
+        if (n < 0){
+            close(sockfd);
             error("ERROR writing to socket");
+        }
         bzero(b, buffer_len);
     }
 
