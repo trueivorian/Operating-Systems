@@ -9,7 +9,7 @@ APPS = serverSingle serverThreaded client
 
 all: $(APPS)
 
-server: serverSingle.c
+serverSingle: serverSingle.c
 	$(GCC) -o serverSingle serverSingle.c
 
 serverThreaded: serverThreaded.c

@@ -20,7 +20,10 @@ int main(int argc, char *argv[])
     struct addrinfo *result, *rp;
     int sockfd, s;
     char buffer[BUFFERLENGTH];
+    char *b = buffer;
+    size_t buffer_len = BUFFERLENGTH;
     int n;
+
     if (argc != 3)
     {
         fprintf(stderr, "usage %s hostname port\n", argv[0]);
@@ -58,18 +61,22 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     freeaddrinfo(result); /* No longer needed */
-    bzero(buffer, BUFFERLENGTH);
+    bzero(b, BUFFERLENGTH);
 
-    while (fgets(buffer, BUFFERLENGTH, stdin))
+    //int loopCount = 0;
+    while(getline(&b, &buffer_len, stdin)>0)
     {
         /* send message */
-        n = write(sockfd, buffer, strlen(buffer));
+        n = write(sockfd, b, strlen(b));
+
+        //printf("(client) %i %s", loopCount++, b);
+
         if (n < 0)
             error("ERROR writing to socket");
-        bzero(buffer, BUFFERLENGTH);
+        bzero(b, buffer_len);
     }
 
-    //close(sockfd);
+    close(sockfd);
 
     return 0;
 }

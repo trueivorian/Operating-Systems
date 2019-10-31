@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <strings.h>
+#include <string.h>
 #include <unistd.h>
 
 #define BUFFERLENGTH 256
@@ -24,14 +25,10 @@ int main(int argc, char *argv[])
     int sockfd, newsockfd, portno;
     char buffer[BUFFERLENGTH];
     struct sockaddr_in6 serv_addr, cli_addr;
-    int n;
-    FILE *fp;
-    int line_no = 0;
 
-    //printf("argc: %i\narg0: %s\narg1: %s\narg2: %s", argc, argv[0], argv[1], argv[2]);
     if (argc != 3)
     {
-        fprintf(stderr, "usage: %s <port>\n", argv[0]);
+        fprintf(stderr, "usage: %s <port> <file_name>\n", argv[0]);
         exit(1);
     }
 
@@ -54,14 +51,13 @@ int main(int argc, char *argv[])
     /* bind it */
     if (bind(sockfd, (struct sockaddr *)&serv_addr,
              sizeof(serv_addr)) < 0)
+    {
         error("ERROR on binding");
+    }
 
     /* ready to accept connections */
     listen(sockfd, 5);
     clilen = sizeof(cli_addr);
-
-    /* open the logfile */
-    fp = fopen(argv[2], "a");
 
     /* now wait in an endless loop for connections and process them */
     while (1)
@@ -73,44 +69,65 @@ int main(int argc, char *argv[])
                            &clilen);
         if (newsockfd < 0)
         {
-            /* close the file*/
-            fclose(fp);
-
-            /* close the connection */
-            close(newsockfd);
-
-            error("ERROR accepting connection");
+            error("ERROR on accept");
         }
 
         bzero(buffer, BUFFERLENGTH);
 
-        /* read the data */
-        n = read(newsockfd, buffer, BUFFERLENGTH - 1);
+        char msg[1024];
+
+        msg[0] = '\0';
+
+        int n;
+
+        // Receive the client message
+        while ((n = read(newsockfd, buffer, BUFFERLENGTH - 1)))
+        {
+
+            strcat(msg, buffer);
+
+            bzero(buffer, BUFFERLENGTH);
+        }
+
         if (n < 0)
         {
-            /* close the file*/
-            fclose(fp);
-
-            /* close the connection */
-            close(newsockfd);
-
             error("ERROR reading from socket");
         }
 
-        if (fp == NULL)
-        {
-            fprintf(stderr, "Cannot Open File: %s", argv[2]); /* write to the log file if valid */
-        }
-        else
-        {
-            fprintf(fp, "%d %s\n", ++line_no, buffer);
-        }
+        int line_no = 0;
+        char *curLine = msg;
 
-        /* close the file*/
-        fclose(fp);
+        // Write text to file line by line
+        while (curLine)
+        {
+            char *nextLine = strchr(curLine, '\n');
+            if (nextLine)
+            {
+                *nextLine = '\0'; // temporarily terminate the current line
+
+                /* open the logfile in append mode*/
+                FILE* fp = fopen(argv[2], "a+");
+
+                if (fp == NULL)
+                {
+                    fprintf(stderr, "Cannot Open File: %s", argv[2]); /* write to the log file if valid */
+                }
+                else
+                {
+                    fprintf(fp, "%d %s\n", line_no++, curLine);
+                }
+
+                /* close the file*/
+                fclose(fp);
+
+                *nextLine = '\n'; // then restore newline-char, just to be tidy
+            }
+            curLine = nextLine ? (nextLine + 1) : NULL;
+        }
 
         /* close the connection */
         close(newsockfd);
     }
+
     return 0;
 }

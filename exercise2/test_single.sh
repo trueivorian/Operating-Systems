@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ### CONFIG ###
-PORT=1234
+PORT=1245
 ##############
 
 set -e

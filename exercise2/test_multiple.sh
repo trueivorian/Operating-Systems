@@ -9,6 +9,8 @@ set -e
 #start server
 test -x ./serverThreaded || ( echo "serverThreaded not found"; exit 1 )
 test -x ./client || ( echo "client not found"; exit 1 )
+rm -f /tmp/logfile.txt
+
 ./serverThreaded $PORT /tmp/logfile.txt &
 sleep 5
 
