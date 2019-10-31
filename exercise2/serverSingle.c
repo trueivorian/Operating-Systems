@@ -91,6 +91,9 @@ int main(int argc, char *argv[])
 
         if (n < 0)
         {
+            /* close the connection */
+            close(newsockfd);
+
             error("ERROR reading from socket");
         }
 
@@ -106,15 +109,15 @@ int main(int argc, char *argv[])
                 *nextLine = '\0'; // temporarily terminate the current line
 
                 /* open the logfile in append mode*/
-                FILE* fp = fopen(argv[2], "a+");
+                FILE *fp = fopen(argv[2], "a+");
 
                 if (fp == NULL)
                 {
-                    fprintf(stderr, "Cannot Open File: %s", argv[2]); /* write to the log file if valid */
+                    fprintf(stderr, "Cannot Open File: %s", argv[2]); 
                 }
                 else
                 {
-                    fprintf(fp, "%d %s\n", line_no++, curLine);
+                    fprintf(fp, "%d %s\n", line_no++, curLine); /* write to the log file if valid */
                 }
 
                 /* close the file*/

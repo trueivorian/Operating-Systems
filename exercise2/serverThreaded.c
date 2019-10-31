@@ -51,6 +51,8 @@ void *processRequest(void *args)
 
   if (n < 0)
   {
+    close(*newsockfd); /* important to avoid memory leak */
+    free(newsockfd);
     error("ERROR reading from socket");
   }
 
@@ -85,7 +87,7 @@ void *processRequest(void *args)
       *nextLine = '\n'; // then restore newline-char, just to be tidy
     }
     curLine = nextLine ? (nextLine + 1) : NULL;
-  }  
+  }
 
   close(*newsockfd); /* important to avoid memory leak */
   free(newsockfd);
