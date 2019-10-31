@@ -74,15 +74,14 @@ int main(int argc, char *argv[])
 
         bzero(buffer, BUFFERLENGTH);
 
-        char msg[1024];
-
-        msg[0] = '\0';
+        char* msg;
 
         int n;
 
         // Receive the client message
         while ((n = read(newsockfd, buffer, BUFFERLENGTH - 1)))
         {
+            msg = (char*)calloc(strlen(buffer), sizeof(char));
 
             strcat(msg, buffer);
 
@@ -93,6 +92,8 @@ int main(int argc, char *argv[])
         {
             /* close the connection */
             close(newsockfd);
+
+            free(msg);
 
             error("ERROR reading from socket");
         }
@@ -130,6 +131,8 @@ int main(int argc, char *argv[])
 
         /* close the connection */
         close(newsockfd);
+
+        free(msg);
     }
 
     return 0;
