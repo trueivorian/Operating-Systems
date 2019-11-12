@@ -6,6 +6,8 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/fs.h>
+#include <linux/types.h>
+#include <linux/list.h>
 #include <asm/uaccess.h>	/* for put_user */
 #include <charDeviceDriver.h>
 #include "ioctl.h"
@@ -25,7 +27,12 @@ MODULE_LICENSE("GPL");
 
 
 DEFINE_MUTEX  (devLock);
-static int counter = 0;
+//static int counter = 0;
+
+struct linkedlist{
+	char* data;
+	struct list_head mylist;
+};
 
 static long device_ioctl(struct file *file,	/* see include/linux/fs.h */
 		 unsigned int ioctl_num,	/* number and param for ioctl */
@@ -36,7 +43,7 @@ static long device_ioctl(struct file *file,	/* see include/linux/fs.h */
 	 * Switch according to the ioctl called 
 	 */
 	if (ioctl_num == RESET_COUNTER) {
-	    counter = 0; 
+	    //counter = 0; 
 	    /* 	    return 0; */
 	    return 5; /* can pass integer as return value */
 	}
@@ -68,6 +75,8 @@ int init_module(void)
 	printk(KERN_INFO "the device file.\n");
 	printk(KERN_INFO "Remove the device file and module when done.\n");
 
+	//INIT_LIST_HEAD(&msg_list.mylist);
+
 	return SUCCESS;
 }
 
@@ -98,7 +107,7 @@ static int device_open(struct inode *inode, struct file *file)
     }
     Device_Open++;
     mutex_unlock (&devLock);
-    sprintf(msg, "I already told you %d times Hello world!\n", counter++);
+    //sprintf(msg, "I already told you %d times Hello world!\n", counter++);
     msg_Ptr = msg;
     try_module_get(THIS_MODULE);
     
