@@ -15,20 +15,19 @@
 
 #define MSG_MAX 4*1024
 
-#define ALL_MSGS_MAX 2*1024*1024
-
 MODULE_LICENSE("GPL");
-
-DEFINE_MUTEX  (devLock);
-static int counter = 0;
 
 struct k_list{
 	struct list_head list;
 	char* data;
 };
 
-//struct list_head *head;
 LIST_HEAD(head);
+
+DEFINE_MUTEX(devLock);
+
+static int ALL_MSGS_MAX = 2*1024*1024;
+static int CURR_MSGS = 0;
 
 /* 
  * This function is called whenever a process tries to do an ioctl on our
@@ -49,9 +48,9 @@ static long device_ioctl(struct file *file,	/* see include/linux/fs.h */
 	 * Switch according to the ioctl called 
 	 */
 	if (ioctl_num == RESET_COUNTER) {
-	    counter = 0; 
+	    //counter = 0; 
 	     	    return 0; 
-	    return 5; /* can pass integer as return value */
+	    //return 5; /* can pass integer as return value */
 	}
 
 	else {
@@ -156,70 +155,37 @@ static ssize_t device_read(struct file *filp,	/* see include/linux/fs.h   */
 		return -EAGAIN;
 	} else{
 		node = list_first_entry(&head, struct k_list, list);
-		buffer = node->data;
 
-		list_del(&node->list);
-
-		return strlen(buffer);
+		if(!copy_to_user(buffer, node->data, length)){
+			list_del(&node->list);
+		}
 	}
 
-	/*
-	 * Number of bytes actually written to the buffer 
-	 */
-	//int bytes_read = 0;
-
-	/* result of function calls */
-	//int result;
-
-	/*
-	 * If we're at the end of the message, 
-	 * return 0 signifying end of file 
-	 */
-	//if (*msg_Ptr == 0)
-	//	return 0;
-
-	/* 
-	 * Actually put the data into the buffer 
-	 */
-	//while (length && *msg_Ptr) {
-
-		/* 
-		 * The buffer is in the user data segment, not the kernel 
-		 * segment so "*" assignment won't work.  We have to use 
-		 * put_user which copies data from the kernel data segment to
-		 * the user data segment. 
-		 */
-	//	result = put_user(*(msg_Ptr++), buffer++);
-	//	if (result != 0) {
-	//	         return -EFAULT;
-	//	}
-		    
-	//	length--;
-	//	bytes_read++;
-	//}
-
-	/* 
-	 * Most read functions return the number of bytes put into the buffer
-	 */
-	//return bytes_read;
-
-	return 0;
+	return length;
 }
 
 /* Called when a process writes to dev file: echo "hi" > /dev/hello  */
-static ssize_t
-device_write(struct file *filp, const char *buff, size_t len, loff_t * off)
+static ssize_t device_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 {
-	struct k_list *temp_node = kmalloc(sizeof(struct k_list), GFP_KERNEL);
-	temp_node->data = kmalloc(sizeof(char)*len, GFP_KERNEL);
+	if(sizeof(char)*len > MSG_MAX){ // Message too big
+		return -EINVAL;
+	} else if((CURR_MSGS + (sizeof(struct k_list)) + (sizeof(char)*len)) > ALL_MSGS_MAX){ // Message list full
+		return -EAGAIN;
+	} else{
+		struct k_list *temp_node = kmalloc(sizeof(struct k_list), GFP_KERNEL);
+		CURR_MSGS += sizeof(struct k_list);
 
-	// copy pointer over from user to kernel
-	if(!copy_from_user(temp_node->data, buff, len)){
-		INIT_LIST_HEAD(&temp_node->list);
+		temp_node->data = kmalloc(sizeof(char)*len, GFP_KERNEL);
+		CURR_MSGS += sizeof(char)*len;
 
-		list_add(&temp_node->list, &head);
-	}else{
-		//add error state
+		// copy pointer over from user to kernel
+		if(!copy_from_user(temp_node->data, buff, len)){
+			INIT_LIST_HEAD(&temp_node->list);
+
+			list_add(&temp_node->list, &head);
+		}else{ // Error copying pointers over
+			return -EINVAL;
+		}
 	}
 
 	// Return number of bytes
