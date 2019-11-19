@@ -652,6 +652,15 @@ deps_/home/bham/work/os/exercise3/charDeviceDriver.o := \
   include/uapi/linux/fcntl.h \
   arch/x86/include/uapi/asm/fcntl.h \
   include/uapi/asm-generic/fcntl.h \
+  include/linux/slab.h \
+    $(wildcard include/config/debug/slab.h) \
+    $(wildcard include/config/failslab.h) \
+    $(wildcard include/config/slab.h) \
+    $(wildcard include/config/slub.h) \
+    $(wildcard include/config/slob.h) \
+  include/linux/kmemleak.h \
+    $(wildcard include/config/debug/kmemleak.h) \
+  include/linux/kasan.h \
   arch/x86/include/asm/uaccess.h \
     $(wildcard include/config/x86/intel/usercopy.h) \
     $(wildcard include/config/debug/strict/user/copy/checks.h) \

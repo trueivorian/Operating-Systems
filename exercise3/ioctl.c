@@ -11,9 +11,9 @@ int main (int argc, char **argv) {
     
     char *filename; /* the name of the device */
     int fd; /* device file descriptor */
-    int result;
+    //int result;
     
-    if (argc != 2) {
+    if (argc != 3) {
 	fprintf (stderr, "Exactly one argument required, exiting!\n");
 	exit (1);
     }
@@ -26,8 +26,8 @@ int main (int argc, char **argv) {
 	exit (1);
     }
 
-    result = ioctl (fd, RESET_COUNTER, 0);
-    printf ("The result of the ioctl is %d\n", result);
+    //result = ioctl (fd, RESET_COUNTER, 0);
+    //printf ("The result of the ioctl is %d\n", result);
     
     close (fd);
     return 0;

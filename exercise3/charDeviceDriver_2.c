@@ -13,9 +13,9 @@
 #include <charDeviceDriver.h>
 #include "ioctl.h"
 
-#define MSG_MAX 4*1024
+#define MSG_MAX = 4*1024
 
-#define ALL_MSGS_MAX 2*1024*1024
+#define ALL_MSGS_MAX = 4*1024*1024
 
 MODULE_LICENSE("GPL");
 
@@ -211,17 +211,12 @@ static ssize_t
 device_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 {
 	struct k_list *temp_node = kmalloc(sizeof(struct k_list), GFP_KERNEL);
-	temp_node->data = kmalloc(sizeof(char*)*MSG_MAX, GFP_KERNEL);
 
-	if(temp_node != NULL){
-		temp_node->data = (char*)buff;
+	temp_node->data = (char*)buff;
 
-		INIT_LIST_HEAD(&temp_node->list);
+	INIT_LIST_HEAD(&temp_node->list);
 
-		list_add(&temp_node->list, &head);
-	}else{
-		//add error state
-	}
+	list_add(&temp_node->list, &head);
 
 	return 0;
 }
