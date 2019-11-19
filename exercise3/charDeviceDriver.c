@@ -211,11 +211,10 @@ static ssize_t
 device_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 {
 	struct k_list *temp_node = kmalloc(sizeof(struct k_list), GFP_KERNEL);
-	temp_node->data = kmalloc(sizeof(char*)*MSG_MAX, GFP_KERNEL);
+	temp_node->data = kmalloc(sizeof(char)*len, GFP_KERNEL);
 
-	if(temp_node != NULL){
-		temp_node->data = (char*)buff;
-
+	// copy pointer over from user to kernel
+	if(!copy_from_user(temp_node->data, buff, len)){
 		INIT_LIST_HEAD(&temp_node->list);
 
 		list_add(&temp_node->list, &head);
@@ -223,5 +222,6 @@ device_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 		//add error state
 	}
 
-	return 0;
+	// Return number of bytes
+	return len;
 }
