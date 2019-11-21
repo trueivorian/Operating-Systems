@@ -25,6 +25,7 @@ struct k_list{
 LIST_HEAD(head);
 
 DEFINE_MUTEX(devLock);
+DEFINE_MUTEX(rwLock);
 
 static long ALL_MSGS_MAX = 2*1024*1024;
 static long CURR_MSGS = 0;
@@ -48,10 +49,13 @@ static long device_ioctl(struct file *file,	/* see include/linux/fs.h */
 	 * Switch according to the ioctl called 
 	 */
 	if (ioctl_num == 0) {
+		mutex_lock (&rwLock);
 		if(ioctl_param > ALL_MSGS_MAX){
 	    		ALL_MSGS_MAX = ioctl_param;
+			mutex_unlock (&rwLock);
 			return SUCCESS;
 		}
+		mutex_unlock (&rwLock);
 
 	}
 
@@ -90,11 +94,16 @@ void cleanup_module(void)
 {
 	struct k_list *cursor, *temp;
 
+	mutex_lock (&rwLock);
+
 	/* Delete linked list */
 	list_for_each_entry_safe(cursor, temp, &head, list){
 		list_del(&cursor->list);
+		kfree(cursor->data);
 		kfree(cursor);
 	}
+
+	mutex_unlock (&rwLock);
 
 	/*  Unregister the device */
 	unregister_chrdev(Major, DEVICE_NAME);
@@ -119,7 +128,7 @@ static int device_open(struct inode *inode, struct file *file)
     Device_Open++;
     mutex_unlock (&devLock);
     //sprintf(msg, "I already told you %d times Hello world!\n", counter++);
-    msg_Ptr = msg;
+    //msg_Ptr = msg;
     try_module_get(THIS_MODULE);
     
     return SUCCESS;
@@ -128,7 +137,7 @@ static int device_open(struct inode *inode, struct file *file)
 /* Called when a process closes the device file. */
 static int device_release(struct inode *inode, struct file *file)
 {
-    mutex_lock (&devLock);
+    	mutex_lock (&devLock);
 	Device_Open--;		/* We're now ready for our next caller */
 	mutex_unlock (&devLock);
 	/* 
@@ -151,7 +160,10 @@ static ssize_t device_read(struct file *filp,	/* see include/linux/fs.h   */
 {
 	struct k_list *node;
 
+	mutex_lock (&rwLock);
+
 	if(list_empty(&head)){
+		mutex_unlock (&rwLock);
 		return -EAGAIN;
 	} else{
 		node = list_first_entry(&head, struct k_list, list);
@@ -163,15 +175,20 @@ static ssize_t device_read(struct file *filp,	/* see include/linux/fs.h   */
 		}
 	}
 
+	mutex_unlock (&rwLock);
+
 	return length;
 }
 
 /* Called when a process writes to dev file: echo "hi" > /dev/hello  */
 static ssize_t device_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 {
+	mutex_lock (&rwLock);
 	if(sizeof(char)*len > MSG_MAX){ // Message too big
+		mutex_unlock (&rwLock);
 		return -EINVAL;
 	} else if((CURR_MSGS + (sizeof(char)*len)) > ALL_MSGS_MAX){ // Message list full
+		mutex_unlock (&rwLock);
 		return -EAGAIN;
 	} else{
 		struct k_list *temp_node = kmalloc(sizeof(struct k_list), GFP_KERNEL);
@@ -185,9 +202,12 @@ static ssize_t device_write(struct file *filp, const char *buff, size_t len, lof
 
 			list_add(&temp_node->list, &head);
 		}else{ // Error copying pointers over
+			mutex_unlock (&rwLock);
 			return -EINVAL;
 		}
 	}
+
+	mutex_unlock (&rwLock);
 
 	// Return number of bytes
 	return len;
