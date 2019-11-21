@@ -47,17 +47,17 @@ static long device_ioctl(struct file *file,	/* see include/linux/fs.h */
 	/* 
 	 * Switch according to the ioctl called 
 	 */
-	if (ioctl_num == RESET_COUNTER) {
-	    //counter = 0; 
-	     	    return 0; 
-	    //return 5; /* can pass integer as return value */
-	}
-
-	else {
-	    /* no operation defined - return failure */
-	    return -EINVAL;
+	if (ioctl_num == 0) {
+		if(ioctl_param > ALL_MSGS_MAX){
+	    		ALL_MSGS_MAX = ioctl_param;
+			return SUCCESS;
+		}
 
 	}
+
+	/* no operation defined - return failure */
+	return -EINVAL;
+
 }
 
 
