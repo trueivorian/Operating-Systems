@@ -26,8 +26,8 @@ LIST_HEAD(head);
 
 DEFINE_MUTEX(devLock);
 
-static int ALL_MSGS_MAX = 2*1024*1024;
-static int CURR_MSGS = 0;
+static long ALL_MSGS_MAX = 2*1024*1024;
+static long CURR_MSGS = 0;
 
 /* 
  * This function is called whenever a process tries to do an ioctl on our
@@ -90,14 +90,14 @@ void cleanup_module(void)
 {
 	struct k_list *cursor, *temp;
 
-	/*  Unregister the device */
-	unregister_chrdev(Major, DEVICE_NAME);
-
 	/* Delete linked list */
 	list_for_each_entry_safe(cursor, temp, &head, list){
 		list_del(&cursor->list);
 		kfree(cursor);
 	}
+
+	/*  Unregister the device */
+	unregister_chrdev(Major, DEVICE_NAME);
 }
 
 /*
@@ -158,6 +158,8 @@ static ssize_t device_read(struct file *filp,	/* see include/linux/fs.h   */
 
 		if(!copy_to_user(buffer, node->data, length)){
 			list_del(&node->list);
+			kfree(node->data);
+			kfree(node);
 		}
 	}
 
@@ -169,11 +171,10 @@ static ssize_t device_write(struct file *filp, const char *buff, size_t len, lof
 {
 	if(sizeof(char)*len > MSG_MAX){ // Message too big
 		return -EINVAL;
-	} else if((CURR_MSGS + (sizeof(struct k_list)) + (sizeof(char)*len)) > ALL_MSGS_MAX){ // Message list full
+	} else if((CURR_MSGS + (sizeof(char)*len)) > ALL_MSGS_MAX){ // Message list full
 		return -EAGAIN;
 	} else{
 		struct k_list *temp_node = kmalloc(sizeof(struct k_list), GFP_KERNEL);
-		CURR_MSGS += sizeof(struct k_list);
 
 		temp_node->data = kmalloc(sizeof(char)*len, GFP_KERNEL);
 		CURR_MSGS += sizeof(char)*len;
