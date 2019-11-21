@@ -94,7 +94,8 @@ void cleanup_module(void)
 {
 	struct k_list *cursor, *temp;
 
-	mutex_lock (&rwLock);
+	/*  Unregister the device */
+	unregister_chrdev(Major, DEVICE_NAME);
 
 	/* Delete linked list */
 	list_for_each_entry_safe(cursor, temp, &head, list){
@@ -102,11 +103,6 @@ void cleanup_module(void)
 		kfree(cursor->data);
 		kfree(cursor);
 	}
-
-	mutex_unlock (&rwLock);
-
-	/*  Unregister the device */
-	unregister_chrdev(Major, DEVICE_NAME);
 }
 
 /*
@@ -160,22 +156,20 @@ static ssize_t device_read(struct file *filp,	/* see include/linux/fs.h   */
 {
 	struct k_list *node;
 
-	mutex_lock (&rwLock);
-
-	if(list_empty(&head)){
-		mutex_unlock (&rwLock);
-		return -EAGAIN;
-	} else{
+	if(!list_empty(&head)){
 		node = list_first_entry(&head, struct k_list, list);
 
 		if(!copy_to_user(buffer, node->data, length)){
+			mutex_lock (&rwLock);
 			list_del(&node->list);
+			mutex_unlock (&rwLock);
+
 			kfree(node->data);
 			kfree(node);
 		}
+	} else{
+		return -EAGAIN;
 	}
-
-	mutex_unlock (&rwLock);
 
 	return length;
 }
@@ -183,11 +177,13 @@ static ssize_t device_read(struct file *filp,	/* see include/linux/fs.h   */
 /* Called when a process writes to dev file: echo "hi" > /dev/hello  */
 static ssize_t device_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 {
-	mutex_lock (&rwLock);
+	
 	if(sizeof(char)*len > MSG_MAX){ // Message too big
-		mutex_unlock (&rwLock);
 		return -EINVAL;
-	} else if((CURR_MSGS + (sizeof(char)*len)) > ALL_MSGS_MAX){ // Message list full
+	}
+
+	mutex_lock (&rwLock);
+	if((CURR_MSGS + (sizeof(char)*len)) > ALL_MSGS_MAX){ // Message list full
 		mutex_unlock (&rwLock);
 		return -EAGAIN;
 	} else{
